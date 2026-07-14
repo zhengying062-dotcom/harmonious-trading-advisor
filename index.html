@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="和谐交易顾问 - 基于谐波形态、多因子模型和统计检验的智能股票分析平台">
+<meta name="theme-color" content="#0a0e14">
+<title>和谐交易顾问 · 股票小助手</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- Screen reader announcer (visually hidden) -->
+<div id="srAnnouncer" class="sr-only" role="status" aria-live="polite"></div>
+
+<!-- ============================================================
+     TOP NAVIGATION
+     ============================================================ -->
+<nav class="top-nav" aria-label="主导航">
+  <div class="nav-left">
+    <span class="nav-logo"><span class="accent">和谐</span>交易顾问</span>
+    <span class="nav-date" id="navDate" aria-label="数据日期">2026-05-16 14:30 CST</span>
+    <span class="data-badge loading" id="dataBadge" role="status" aria-live="polite"><span class="spinner" style="width:10px;height:10px;border-width:1.5px;"></span> 加载中</span>
+  </div>
+  <div class="nav-right">
+    <button class="btn-refresh" onclick="openRefreshModal()" aria-label="刷新数据 (快捷键 Ctrl+R)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      刷新数据
+    </button>
+  </div>
+</nav>
+
+<!-- ============================================================
+     MAIN CONTENT GRID
+     ============================================================ -->
+<main class="main-content" id="mainContent">
+
+  <!-- ========== MARKET OVERVIEW ========== -->
+  <section class="section" id="section-market" aria-labelledby="marketTitle">
+    <div class="section-header">
+      <span class="section-title" id="marketTitle"><span class="dot dot-blue" aria-hidden="true"></span>市场概览</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)">收盘数据 · 2026-05-15</span>
+    </div>
+    <div class="section-body">
+      <div class="market-grid" id="marketGrid" role="list" aria-label="指数列表">
+        <!-- Populated by JS -->
+      </div>
+      <div class="sentiment-row" aria-label="市场情绪指标">
+        <div class="sentiment-gauge">
+          <span class="gauge-label">市场情绪</span>
+          <span class="gauge-val" id="sentimentVal">中性偏多</span>
+          <div class="gauge-bar" aria-hidden="true"></div>
+        </div>
+        <div class="sentiment-gauge">
+          <span class="gauge-label">VIX 恐慌指数</span>
+          <span class="gauge-val" style="color:var(--green)">18.3</span>
+        </div>
+        <div class="sentiment-gauge">
+          <span class="gauge-label">北向资金 (亿)</span>
+          <span class="gauge-val" style="color:var(--green)">+43.7</span>
+        </div>
+        <div class="sentiment-gauge">
+          <span class="gauge-label">市场阶段</span>
+          <span class="gauge-val" style="color:var(--cyan)">积累期 → 上行</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TODAY'S RECOMMENDATIONS ========== -->
+  <section class="section" id="section-recommendations" aria-labelledby="recTitle">
+    <div class="section-header">
+      <span class="section-title" id="recTitle"><span class="dot dot-green" aria-hidden="true"></span>今日推荐</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)">基于三大框架融合分析</span>
+    </div>
+    <div class="section-body">
+      <div class="analysis-progress-container" id="analysisProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="analysis-progress-header">
+          <span class="analysis-progress-label">三框架分析引擎运行中</span>
+          <span class="analysis-progress-count" id="analysisProgressCount">0 / 0</span>
+        </div>
+        <div class="analysis-progress-track">
+          <div class="analysis-progress-fill" id="analysisProgressFill" style="width:0%"></div>
+        </div>
+        <div class="analysis-progress-detail" id="analysisProgressDetail">准备中...</div>
+      </div>
+      <div class="rec-cards" id="recCards">
+        <!-- Populated by JS (skeleton shown during loading) -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== USER POSITION MANAGEMENT ========== -->
+  <section class="section" id="section-user-positions" aria-labelledby="userPosTitle">
+    <div class="section-header">
+      <span class="section-title" id="userPosTitle"><span class="dot dot-green" style="background:var(--purple);" aria-hidden="true"></span>我的持仓管理</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)">手动输入持仓 · 三框架分析</span>
+    </div>
+    <div class="section-body">
+      <div class="up-toolbar">
+        <div class="up-toolbar-left" id="upSlotCount" aria-live="polite">已录入 0/10 个持仓</div>
+        <div class="up-toolbar-right">
+          <button class="up-btn up-btn-clear" onclick="clearAllUserPositions()" title="清空所有持仓" aria-label="清空所有持仓数据">清空全部</button>
+          <button class="up-btn up-btn-save" onclick="saveUserPositions()" aria-label="保存持仓到本地">保存持仓</button>
+          <button class="up-btn up-btn-analyze" id="btnAnalyzeUser" onclick="analyzeUserPositions()" aria-label="开始分析我的持仓">分析我的持仓</button>
+        </div>
+      </div>
+
+      <div id="upInputContainer" role="form" aria-label="持仓输入表单">
+        <!-- Populated by JS -->
+      </div>
+
+      <button class="up-btn up-btn-expand" id="btnExpandRows" onclick="toggleExpandRows()" style="display:none;" aria-expanded="false">
+        展开更多 (4-10)
+      </button>
+
+      <div class="up-analysis-container" id="upAnalysisContainer" style="display:none;" aria-live="polite">
+        <div class="up-analysis-title">三框架分析结果</div>
+        <div class="up-analysis-subtitle" id="upAnalysisSubtitle">基于谐波形态 · 多因子模型 · 统计检验</div>
+        <div class="up-analysis-grid" id="upAnalysisGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== BACKTEST VERIFICATION ========== -->
+  <section class="section bt-section" id="section-backtest" aria-labelledby="btTitle">
+    <div class="section-header">
+      <span class="section-title" id="btTitle"><span class="dot dot-green" style="background:var(--cyan);" aria-hidden="true"></span>回测验证</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)">5天前历史分析 · 校正因子</span>
+    </div>
+    <div class="section-body">
+      <div class="bt-toolbar">
+        <button class="bt-btn bt-btn-run" id="btnRunBacktest" onclick="runBacktest()" aria-label="运行历史回测验证">运行回测</button>
+        <button class="bt-btn bt-btn-clear" id="btnClearBacktest" onclick="clearBacktestResults()" aria-label="清除回测结果">清除回测结果</button>
+        <label class="bt-toggle" id="btToggleCorrection" title="开启/关闭校正因子对当前建议的影响" tabindex="0" role="switch" aria-checked="true">
+          <span class="bt-toggle-switch active" id="btToggleSwitch" aria-hidden="true"></span>
+          <span id="btToggleLabel">校正因子: 开启</span>
+        </label>
+      </div>
+
+      <div class="bt-progress-wrap" id="btProgressWrap" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="bt-progress-bar">
+          <div class="bt-progress-fill" id="btProgressFill" style="width:0%"></div>
+        </div>
+        <div class="bt-progress-text" id="btProgressText">准备中...</div>
+      </div>
+
+      <div class="bt-summary-grid" id="btSummaryGrid" style="display:none;" aria-label="回测摘要">
+        <div class="bt-summary-card">
+          <div class="bt-sl">方向准确率</div>
+          <div class="bt-sv" id="btAccuracy">--</div>
+          <div class="bt-sl" id="btAccuracyLabel">--</div>
+        </div>
+        <div class="bt-summary-card">
+          <div class="bt-sl">平均偏差</div>
+          <div class="bt-sv" id="btAvgBias">--</div>
+          <div class="bt-sl" id="btAvgBiasLabel">--</div>
+        </div>
+        <div class="bt-summary-card">
+          <div class="bt-sl">信号可靠性</div>
+          <div class="bt-sv" id="btReliability">--</div>
+          <div class="bt-sl" id="btReliabilityLabel">--</div>
+        </div>
+        <div class="bt-summary-card">
+          <div class="bt-sl">校正因子</div>
+          <div class="bt-sv" id="btCorrectionFactor">--</div>
+          <div class="bt-sl" id="btCorrectionLabel">--</div>
+        </div>
+      </div>
+
+      <div class="bt-interpretation" id="btInterpretation" style="display:none;" aria-live="polite"></div>
+
+      <div class="bt-table-wrap" id="btTableWrap" style="display:none;" role="table" aria-label="回测详情">
+        <table class="bt-table" id="btTable">
+          <thead>
+            <tr>
+              <th scope="col">股票</th>
+              <th scope="col">历史建议</th>
+              <th scope="col">预测方向</th>
+              <th scope="col">实际涨跌</th>
+              <th scope="col">是否准确</th>
+              <th scope="col">偏差</th>
+            </tr>
+          </thead>
+          <tbody id="btTableBody">
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bt-empty" id="btEmpty" role="status">
+        尚未运行回测。点击"运行回测"对5天前的分析进行验证。
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== ACTIVE POSITIONS TRACKER ========== -->
+  <section class="section" id="section-positions" aria-labelledby="posTitle">
+    <div class="section-header">
+      <span class="section-title" id="posTitle"><span class="dot dot-orange" aria-hidden="true"></span>活跃持仓追踪</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)" id="posCount" aria-live="polite">共 4 个活跃持仓</span>
+    </div>
+    <div class="section-body">
+      <div class="pos-table-wrap" role="table" aria-label="活跃持仓列表">
+        <table class="pos-table" id="posTable">
+          <!-- Populated by JS -->
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HISTORY ========== -->
+  <section class="section" id="section-history" aria-labelledby="histTitle">
+    <div class="section-header">
+      <span class="section-title" id="histTitle"><span class="dot dot-green" aria-hidden="true"></span>历史推荐记录 (近30天)</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)">胜率: 66.7% | 平均收益: +2.8%</span>
+    </div>
+    <div class="section-body">
+      <div class="history-table-wrap" role="table" aria-label="历史推荐记录">
+        <table class="history-table" id="historyTable">
+          <!-- Populated by JS -->
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================================================
+     FOOTER STATUS BAR
+     ============================================================ -->
+<footer class="footer-bar" role="contentinfo">
+  <span><span class="dot-live" aria-hidden="true"></span> 最后更新: 2026-05-16 14:30:00 CST</span>
+  <span>数据来源: <span id="footerDataSource">东方财富 (实时) | 模拟数据 (备用)</span></span>
+  <span>框架: 和谐交易 · 量化因子 · Quantopia 56讲</span>
+  <span style="color:var(--orange)" role="alert">⚠ 投资有风险 · 不构成投资建议</span>
+</footer>
+
+<!-- ============================================================
+     DATA MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="refreshModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-box">
+    <h3 id="modalTitle">数据更新</h3>
+    <p>系统接入 <strong>东方财富实时行情API</strong>，每60秒自动刷新指数数据。<br>推荐与持仓价格基于真实行情，分析框架为模拟数据。</p>
+    <p style="font-size:0.78rem;color:var(--text-muted);">完整三大框架分析引擎（谐波形态识别 + 多因子模型 + Quantopia量化系统）将逐步接入。</p>
+    <button onclick="closeRefreshModal()" aria-label="关闭数据更新弹窗">我知道了</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCRIPTS (load order matters - dependencies first)
+     ============================================================ -->
+<!-- Pre-generated data loader (if available) -->
+<script src="market_data.js"></script>
+
+<!-- Foundation layer -->
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/store.js"></script>
+
+<!-- Engine layer -->
+<script src="js/harmonic.js"></script>
+<script src="js/factors.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/anti-quant.js"></script>
+<script src="js/api.js"></script>
+
+<!-- UI & interaction layer -->
+<script src="js/ui.js"></script>
+<script src="js/user-positions.js"></script>
+<script src="js/backtest.js"></script>
+
+<!-- Init (bootstraps everything) -->
+<script src="js/init.js"></script>
+
+</body>
+</html>
