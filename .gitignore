@@ -13,6 +13,5 @@ package.json
 package-lock.json
 server.js
 start.bat
-update_data.js
 recommendations.json
 .DS_Store

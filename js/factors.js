@@ -26,12 +26,16 @@ function calculateMultiFactorScore(stock, klines, indexKlines) {
   var qualityScore = calcQualityFactor(klines);
   var volatilityScore = calcVolatilityFactor(klines, close);
   var sentimentScore = calcSentimentFactor(stock, klines);
+  // New: volume-price coordination factor (量价配合)
+  var vpCoordination = calcVolumePriceCoordination(klines);
 
-  var totalScore = momentumScore * 0.30 +
-                   valueScore * 0.20 +
+  // Adjusted weights: momentum boosted for price-movement sensitivity
+  var totalScore = momentumScore * 0.35 +
+                   valueScore * 0.15 +
                    qualityScore * 0.15 +
-                   volatilityScore * 0.20 +
-                   sentimentScore * 0.15;
+                   volatilityScore * 0.15 +
+                   sentimentScore * 0.10 +
+                   vpCoordination * 0.10;
 
   return {
     totalScore: Math.min(100, Math.max(0, Math.round(totalScore))),
@@ -40,16 +44,20 @@ function calculateMultiFactorScore(stock, klines, indexKlines) {
     quality: Math.round(qualityScore),
     volatility: Math.round(volatilityScore),
     sentiment: Math.round(sentimentScore),
+    vpCoordination: Math.round(vpCoordination),
     breakdown: '动量' + Math.round(momentumScore) +
                ' | 价值' + Math.round(valueScore) +
                ' | 质量' + Math.round(qualityScore) +
                ' | 波动' + Math.round(volatilityScore) +
-               ' | 情绪' + Math.round(sentimentScore)
+               ' | 情绪' + Math.round(sentimentScore) +
+               ' | 量价' + Math.round(vpCoordination)
   };
 }
 
 /**
- * Momentum factor: weighted Z-score of 5/10/20 day returns
+ * Momentum factor: enhanced sensitivity to recent price movements
+ * Uses 3/5/10/20 day returns with higher weight on short-term
+ * plus trend consistency score (consecutive up/down days)
  */
 function calcMomentumFactor(klines) {
   var len = klines.length;
@@ -57,12 +65,34 @@ function calcMomentumFactor(klines) {
 
   var close = klines[len - 1].close;
 
+  // Multi-period returns with increased short-term sensitivity
+  var r3 = len >= 3 ? (close - klines[len - 3].close) / klines[len - 3].close : 0;
   var r5 = len >= 5 ? (close - klines[len - 5].close) / klines[len - 5].close : 0;
   var r10 = len >= 10 ? (close - klines[len - 10].close) / klines[len - 10].close : 0;
   var r20 = len >= 20 ? (close - klines[len - 20].close) / klines[len - 20].close : 0;
 
-  var weightedR = r5 * 0.5 + r10 * 0.3 + r20 * 0.2;
-  var score = 50 + weightedR * 100 * 8;
+  // Weighted: short-term has higher impact (3-day 35%, 5-day 30%, 10-day 20%, 20-day 15%)
+  var weightedR = r3 * 0.35 + r5 * 0.30 + r10 * 0.20 + r20 * 0.15;
+
+  // Trend consistency: count consecutive days in same direction
+  var trendBonus = 0;
+  var upDays = 0, downDays = 0;
+  var checkDays = Math.min(len - 1, 7);
+  for (var i = len - checkDays; i < len; i++) {
+    if (klines[i].close > klines[i - 1].close) upDays++;
+    else downDays++;
+  }
+  // Strong trend = higher score impact
+  var maxDir = Math.max(upDays, downDays);
+  if (maxDir >= 6) trendBonus = 15;      // Very strong trend
+  else if (maxDir >= 5) trendBonus = 10;  // Strong trend
+  else if (maxDir >= 4) trendBonus = 5;   // Moderate trend
+
+  // Apply trend direction: if mostly up, add bonus; if mostly down, subtract
+  if (downDays > upDays) trendBonus = -trendBonus;
+
+  // Amplification: weightedR * 100 converts to %, then scale by 10x for sensitivity
+  var score = 50 + weightedR * 100 * 10 + trendBonus;
   return Math.min(100, Math.max(0, score));
 }
 
@@ -185,4 +215,53 @@ function calcSentimentFactor(stock, klines) {
   else if (ratio > 1.3 && ratio <= 2.5) score = 50 + (2.5 - ratio) / 1.2 * 35;
   else score = 30;
   return Math.min(100, Math.max(10, score));
+}
+
+/**
+ * Volume-Price Coordination factor (量价配合)
+ * Measures how well volume supports price movements.
+ * High score: rising price with rising volume (bullish confirmation)
+ * or falling price with falling volume (bearish exhaustion)
+ * Low score: price-volume divergence (potential reversal signal)
+ */
+function calcVolumePriceCoordination(klines) {
+  var len = klines.length;
+  if (len < 10) return 50;
+
+  // Look at last 10 days of price-volume relationship
+  var checkLen = Math.min(len - 1, 10);
+  var start = len - checkLen - 1;
+
+  var coordinationScore = 0;
+  var totalWeight = 0;
+
+  for (var i = start + 1; i < len; i++) {
+    var priceChange = (klines[i].close - klines[i - 1].close) / klines[i - 1].close;
+    var volChange = klines[i].volume > 0 && klines[i - 1].volume > 0
+      ? (klines[i].volume - klines[i - 1].volume) / klines[i - 1].volume
+      : 0;
+
+    // Recent days have higher weight
+    var weight = 1 + (i - start) / checkLen;
+
+    // Price up + Volume up = strong bullish coordination (+)
+    // Price down + Volume down = potential bottoming (+)
+    // Price up + Volume down = bearish divergence (-)
+    // Price down + Volume up = bearish confirmation (-)
+    if (priceChange > 0 && volChange > 0) {
+      coordinationScore += weight * Math.min(2, priceChange * 100 + volChange);
+    } else if (priceChange < 0 && volChange < 0) {
+      coordinationScore += weight * 0.3; // Mild positive (selling exhaustion)
+    } else if (priceChange > 0 && volChange < 0) {
+      coordinationScore -= weight * 0.5; // Divergence - weak rally
+    } else if (priceChange < 0 && volChange > 0) {
+      coordinationScore -= weight * Math.min(2, Math.abs(priceChange) * 100 + volChange);
+    }
+
+    totalWeight += weight;
+  }
+
+  // Normalize to 0-100 scale
+  var normalized = 50 + (coordinationScore / Math.max(1, totalWeight)) * 20;
+  return Math.min(100, Math.max(5, Math.round(normalized)));
 }

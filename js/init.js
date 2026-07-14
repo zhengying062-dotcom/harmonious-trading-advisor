@@ -23,6 +23,33 @@ window.addEventListener('unhandledrejection', function(event) {
   recordError('unhandled', msg);
 });
 
+// ---- Daily Recommendation Rotation ----
+var RECENT_RECS_KEY = 'harmonious_recent_recs';
+
+function loadRecentRecommendations() {
+  try {
+    var raw = localStorage.getItem(RECENT_RECS_KEY);
+    if (raw) {
+      var data = JSON.parse(raw);
+      // Only use if it's from the last 3 days
+      if (data.date && data.codes) {
+        var daysAgo = Math.floor((new Date() - new Date(data.date)) / 86400000);
+        if (daysAgo <= 3) return data.codes;
+      }
+    }
+  } catch(e) {}
+  return [];
+}
+
+function saveRecentRecommendations(codes) {
+  try {
+    localStorage.setItem(RECENT_RECS_KEY, JSON.stringify({
+      date: new Date().toISOString().split('T')[0],
+      codes: codes
+    }));
+  } catch(e) {}
+}
+
 // ---- Data Refresh Orchestration ----
 
 async function refreshAllData() {
@@ -77,8 +104,9 @@ async function fetchAndGenerateRecommendations() {
   }
   store.analysisRunning = true;
   try {
+    // Fetch top-80 by turnover (expanded from 30 for more diversity)
     var url = API.CLIST +
-      '?pn=1&pz=30&po=1&np=1&fltt=2' +
+      '?pn=1&pz=80&po=1&np=1&fltt=2' +
       '&fields=f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f14,f15,f16,f17,f18,f20,f21' +
       '&fs=m:0+t:6,m:0+t:80';
     var data = await apiFetchWithRetry(url, 12000, 2);
@@ -89,14 +117,32 @@ async function fetchAndGenerateRecommendations() {
 
     var stocks = data.data.diff;
 
+    // ---- Daily rotation seed: different stocks get priority each day ----
+    var todayDate = new Date();
+    var daySeed = todayDate.getFullYear() * 1000 +
+      Math.floor((todayDate - new Date(todayDate.getFullYear(), 0, 0)) / 86400000);
+    // Simple hash: mix bits of the day seed
+    var hash = ((daySeed * 2654435761) >>> 0) / 4294967296; // 0..1 pseudo-random based on date
+
+    // ---- Track recently recommended stocks to rotate ----
+    var recentCodes = loadRecentRecommendations();
+
     var candidates = stocks
       .filter(function(s) {
         var pe = s.f9;
         var turnover = s.f6;
-        return turnover > 300000000 && pe > 0 && pe < 200;
+        // Relaxed filter: turnover > 1亿, PE 0-300
+        return turnover > 100000000 && pe > 0 && pe < 300;
       })
       .map(function(s) {
-        var score = Math.log10(s.f6 || 1e8) * 3 + Math.abs(s.f3 || 1) * 2;
+        var code = String(s.f12);
+        var baseScore = Math.log10(s.f6 || 1e8) * 2.5 + Math.abs(s.f3 || 1) * 1.5;
+        // Freshness bonus: stocks NOT in recent recommendations get +25% boost
+        var freshnessBonus = (recentCodes.indexOf(code) === -1) ? 1.25 : 0.7;
+        // Day-based jitter: ±15% pseudo-random variation based on code + date
+        var codeNum = parseInt(code, 10) || 0;
+        var jitter = 0.85 + ((codeNum * 16807 + daySeed * 48271) % 10007) / 10007 * 0.3;
+        var score = baseScore * freshnessBonus * jitter;
         return { stock: s, score: score };
       })
       .sort(function(a, b) { return b.score - a.score; });
@@ -105,20 +151,33 @@ async function fetchAndGenerateRecommendations() {
       throw new Error('无符合条件的候选股票');
     }
 
-    // Top 10 with sector diversification
+    // ---- Select top-12 (increased from 10), with sector + market-cap diversity ----
     var topCandidates = [];
     var usedSectors = {};
-    for (var i = 0; i < candidates.length && topCandidates.length < 10; i++) {
+    // Alternate: pick from top half first, then add mid-cap discovery picks
+    for (var i = 0; i < candidates.length && topCandidates.length < 12; i++) {
       var s = candidates[i].stock;
       var code = String(s.f12);
       var sector = code.charAt(0);
-      if (!usedSectors[sector] || topCandidates.length >= 5) {
-        usedSectors[sector] = true;
-        topCandidates.push(candidates[i]);
+      // First 7: sector-diversified top picks
+      if (topCandidates.length < 7) {
+        if (!usedSectors[sector] || Object.keys(usedSectors).length >= 5) {
+          usedSectors[sector] = true;
+          topCandidates.push(candidates[i]);
+        }
+      } else {
+        // Next 5: any remaining high-scorers (allows same-sector if quality is high)
+        var alreadyPicked = false;
+        for (var k = 0; k < topCandidates.length; k++) {
+          if (topCandidates[k].stock.f12 === s.f12) { alreadyPicked = true; break; }
+        }
+        if (!alreadyPicked) {
+          topCandidates.push(candidates[i]);
+        }
       }
     }
 
-    // Get index K-line for correlation & quant regime
+    // ---- Get index K-line for correlation & quant regime ----
     var indexKlines = null;
     var quantRegime = null;
     try {
@@ -132,7 +191,8 @@ async function fetchAndGenerateRecommendations() {
     }
 
     var analysisResults = await runThreeFrameworkAnalysis(topCandidates, indexKlines, quantRegime);
-    var topN = analysisResults.slice(0, 5);
+    // Show top 8 (increased from 5)
+    var topN = analysisResults.slice(0, 8);
 
     if (topN.length === 0) {
       throw new Error('所有候选股票分析失败');
@@ -141,6 +201,9 @@ async function fetchAndGenerateRecommendations() {
     store.recommendations = topN.map(function(analysis, idx) {
       return buildRecommendationFromAnalysis(analysis, idx + 1);
     });
+
+    // ---- Save this round's codes for next-day rotation ----
+    saveRecentRecommendations(topN.map(function(a) { return String(a.stock.f12); }));
 
     hideAnalysisProgress();
     store.analysisRunning = false;
@@ -404,7 +467,7 @@ function manualRefresh() {
   store.preGeneratedTime = null;
   var navDate = document.getElementById('navDate');
   if (navDate) {
-    navDate.textContent = TODAY + ' 14:30 CST [实时分析中...]';
+    navDate.textContent = TODAY + ' 08:00 CST [实时分析中...]';
   }
   refreshAllData().finally(function() {
     if (btn) {
@@ -509,9 +572,9 @@ function init() {
   if (navDate) {
     var dateStr;
     if (hasPreGenData) {
-      dateStr = TODAY + ' ' + (store.preGeneratedTime || '14:30 CST') + ' [预生成]';
+      dateStr = TODAY + ' ' + (store.preGeneratedTime || '08:00 CST') + ' [预生成]';
     } else {
-      dateStr = TODAY + ' 14:30 CST [实时]';
+      dateStr = TODAY + ' 08:00 CST [实时]';
     }
     navDate.textContent = dateStr;
   }

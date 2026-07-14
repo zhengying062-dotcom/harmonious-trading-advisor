@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Local development server (port 3000, or set PORT env var)
 npm start
 
-# Generate pre-baked market data for today (run after market close, 14:30+ CST)
+# Generate pre-baked market data for today (run before market open, 08:00+ CST)
 npm run update
 
 # Build a self-contained single-file HTML for sharing/deployment

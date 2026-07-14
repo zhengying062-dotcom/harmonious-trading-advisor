@@ -6,6 +6,252 @@
 <meta name="description" content="和谐交易顾问 - 基于谐波形态、多因子模型和统计检验的智能股票分析平台">
 <meta name="theme-color" content="#0a0e14">
 <title>和谐交易顾问 · 股票小助手</title>
+</head>
+<body>
+
+<!-- Screen reader announcer (visually hidden) -->
+<div id="srAnnouncer" class="sr-only" role="status" aria-live="polite"></div>
+
+<!-- ============================================================
+     TOP NAVIGATION
+     ============================================================ -->
+<nav class="top-nav" aria-label="主导航">
+  <div class="nav-left">
+    <span class="nav-logo"><span class="accent">和谐</span>交易顾问</span>
+    <span class="nav-date" id="navDate" aria-label="数据日期">2026-05-16 08:00 CST</span>
+    <span class="data-badge loading" id="dataBadge" role="status" aria-live="polite"><span class="spinner" style="width:10px;height:10px;border-width:1.5px;"></span> 加载中</span>
+  </div>
+  <div class="nav-right">
+    <button class="btn-refresh" onclick="openRefreshModal()" aria-label="刷新数据 (快捷键 Ctrl+R)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      刷新数据
+    </button>
+  </div>
+</nav>
+
+<!-- ============================================================
+     MAIN CONTENT GRID
+     ============================================================ -->
+<main class="main-content" id="mainContent">
+
+  <!-- ========== MARKET OVERVIEW ========== -->
+  <section class="section" id="section-market" aria-labelledby="marketTitle">
+    <div class="section-header">
+      <span class="section-title" id="marketTitle"><span class="dot dot-blue" aria-hidden="true"></span>市场概览</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)">收盘数据 · 2026-05-15</span>
+    </div>
+    <div class="section-body">
+      <div class="market-grid" id="marketGrid" role="list" aria-label="指数列表">
+        <!-- Populated by JS -->
+      </div>
+      <div class="sentiment-row" aria-label="市场情绪指标">
+        <div class="sentiment-gauge">
+          <span class="gauge-label">市场情绪</span>
+          <span class="gauge-val" id="sentimentVal">中性偏多</span>
+          <div class="gauge-bar" aria-hidden="true"></div>
+        </div>
+        <div class="sentiment-gauge">
+          <span class="gauge-label">VIX 恐慌指数</span>
+          <span class="gauge-val" style="color:var(--green)">18.3</span>
+        </div>
+        <div class="sentiment-gauge">
+          <span class="gauge-label">北向资金 (亿)</span>
+          <span class="gauge-val" style="color:var(--green)">+43.7</span>
+        </div>
+        <div class="sentiment-gauge">
+          <span class="gauge-label">市场阶段</span>
+          <span class="gauge-val" style="color:var(--cyan)">积累期 → 上行</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TODAY'S RECOMMENDATIONS ========== -->
+  <section class="section" id="section-recommendations" aria-labelledby="recTitle">
+    <div class="section-header">
+      <span class="section-title" id="recTitle"><span class="dot dot-green" aria-hidden="true"></span>今日推荐</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)">基于三大框架融合分析</span>
+    </div>
+    <div class="section-body">
+      <div class="analysis-progress-container" id="analysisProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="analysis-progress-header">
+          <span class="analysis-progress-label">三框架分析引擎运行中</span>
+          <span class="analysis-progress-count" id="analysisProgressCount">0 / 0</span>
+        </div>
+        <div class="analysis-progress-track">
+          <div class="analysis-progress-fill" id="analysisProgressFill" style="width:0%"></div>
+        </div>
+        <div class="analysis-progress-detail" id="analysisProgressDetail">准备中...</div>
+      </div>
+      <div class="rec-cards" id="recCards">
+        <!-- Populated by JS (skeleton shown during loading) -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== USER POSITION MANAGEMENT ========== -->
+  <section class="section" id="section-user-positions" aria-labelledby="userPosTitle">
+    <div class="section-header">
+      <span class="section-title" id="userPosTitle"><span class="dot dot-green" style="background:var(--purple);" aria-hidden="true"></span>我的持仓管理</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)">手动输入持仓 · 三框架分析</span>
+    </div>
+    <div class="section-body">
+      <div class="up-toolbar">
+        <div class="up-toolbar-left" id="upSlotCount" aria-live="polite">已录入 0/10 个持仓</div>
+        <div class="up-toolbar-right">
+          <button class="up-btn up-btn-clear" onclick="clearAllUserPositions()" title="清空所有持仓" aria-label="清空所有持仓数据">清空全部</button>
+          <button class="up-btn up-btn-save" onclick="saveUserPositions()" aria-label="保存持仓到本地">保存持仓</button>
+          <button class="up-btn up-btn-analyze" id="btnAnalyzeUser" onclick="analyzeUserPositions()" aria-label="开始分析我的持仓">分析我的持仓</button>
+        </div>
+      </div>
+
+      <div id="upInputContainer" role="form" aria-label="持仓输入表单">
+        <!-- Populated by JS -->
+      </div>
+
+      <button class="up-btn up-btn-expand" id="btnExpandRows" onclick="toggleExpandRows()" style="display:none;" aria-expanded="false">
+        展开更多 (4-10)
+      </button>
+
+      <div class="up-analysis-container" id="upAnalysisContainer" style="display:none;" aria-live="polite">
+        <div class="up-analysis-title">三框架分析结果</div>
+        <div class="up-analysis-subtitle" id="upAnalysisSubtitle">基于谐波形态 · 多因子模型 · 统计检验</div>
+        <div class="up-analysis-grid" id="upAnalysisGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== BACKTEST VERIFICATION ========== -->
+  <section class="section bt-section" id="section-backtest" aria-labelledby="btTitle">
+    <div class="section-header">
+      <span class="section-title" id="btTitle"><span class="dot dot-green" style="background:var(--cyan);" aria-hidden="true"></span>回测验证</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)">5天前历史分析 · 校正因子</span>
+    </div>
+    <div class="section-body">
+      <div class="bt-toolbar">
+        <button class="bt-btn bt-btn-run" id="btnRunBacktest" onclick="runBacktest()" aria-label="运行历史回测验证">运行回测</button>
+        <button class="bt-btn bt-btn-clear" id="btnClearBacktest" onclick="clearBacktestResults()" aria-label="清除回测结果">清除回测结果</button>
+        <label class="bt-toggle" id="btToggleCorrection" title="开启/关闭校正因子对当前建议的影响" tabindex="0" role="switch" aria-checked="true">
+          <span class="bt-toggle-switch active" id="btToggleSwitch" aria-hidden="true"></span>
+          <span id="btToggleLabel">校正因子: 开启</span>
+        </label>
+      </div>
+
+      <div class="bt-progress-wrap" id="btProgressWrap" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="bt-progress-bar">
+          <div class="bt-progress-fill" id="btProgressFill" style="width:0%"></div>
+        </div>
+        <div class="bt-progress-text" id="btProgressText">准备中...</div>
+      </div>
+
+      <div class="bt-summary-grid" id="btSummaryGrid" style="display:none;" aria-label="回测摘要">
+        <div class="bt-summary-card">
+          <div class="bt-sl">方向准确率</div>
+          <div class="bt-sv" id="btAccuracy">--</div>
+          <div class="bt-sl" id="btAccuracyLabel">--</div>
+        </div>
+        <div class="bt-summary-card">
+          <div class="bt-sl">平均偏差</div>
+          <div class="bt-sv" id="btAvgBias">--</div>
+          <div class="bt-sl" id="btAvgBiasLabel">--</div>
+        </div>
+        <div class="bt-summary-card">
+          <div class="bt-sl">信号可靠性</div>
+          <div class="bt-sv" id="btReliability">--</div>
+          <div class="bt-sl" id="btReliabilityLabel">--</div>
+        </div>
+        <div class="bt-summary-card">
+          <div class="bt-sl">校正因子</div>
+          <div class="bt-sv" id="btCorrectionFactor">--</div>
+          <div class="bt-sl" id="btCorrectionLabel">--</div>
+        </div>
+      </div>
+
+      <div class="bt-interpretation" id="btInterpretation" style="display:none;" aria-live="polite"></div>
+
+      <div class="bt-table-wrap" id="btTableWrap" style="display:none;" role="table" aria-label="回测详情">
+        <table class="bt-table" id="btTable">
+          <thead>
+            <tr>
+              <th scope="col">股票</th>
+              <th scope="col">历史建议</th>
+              <th scope="col">预测方向</th>
+              <th scope="col">实际涨跌</th>
+              <th scope="col">是否准确</th>
+              <th scope="col">偏差</th>
+            </tr>
+          </thead>
+          <tbody id="btTableBody">
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bt-empty" id="btEmpty" role="status">
+        尚未运行回测。点击"运行回测"对5天前的分析进行验证。
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== ACTIVE POSITIONS TRACKER ========== -->
+  <section class="section" id="section-positions" aria-labelledby="posTitle">
+    <div class="section-header">
+      <span class="section-title" id="posTitle"><span class="dot dot-orange" aria-hidden="true"></span>活跃持仓追踪</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)" id="posCount" aria-live="polite">共 4 个活跃持仓</span>
+    </div>
+    <div class="section-body">
+      <div class="pos-table-wrap" role="table" aria-label="活跃持仓列表">
+        <table class="pos-table" id="posTable">
+          <!-- Populated by JS -->
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HISTORY ========== -->
+  <section class="section" id="section-history" aria-labelledby="histTitle">
+    <div class="section-header">
+      <span class="section-title" id="histTitle"><span class="dot dot-green" aria-hidden="true"></span>历史推荐记录 (近30天)</span>
+      <span style="font-size:0.7rem;color:var(--text-muted)">胜率: 66.7% | 平均收益: +2.8%</span>
+    </div>
+    <div class="section-body">
+      <div class="history-table-wrap" role="table" aria-label="历史推荐记录">
+        <table class="history-table" id="historyTable">
+          <!-- Populated by JS -->
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================================================
+     FOOTER STATUS BAR
+     ============================================================ -->
+<footer class="footer-bar" role="contentinfo">
+  <span><span class="dot-live" aria-hidden="true"></span> 最后更新: 2026-05-16 14:30:00 CST</span>
+  <span>数据来源: <span id="footerDataSource">东方财富 (实时) | 模拟数据 (备用)</span></span>
+  <span>框架: 和谐交易 · 量化因子 · Quantopia 56讲</span>
+  <span style="color:var(--orange)" role="alert">⚠ 投资有风险 · 不构成投资建议</span>
+</footer>
+
+<!-- ============================================================
+     DATA MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="refreshModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-box">
+    <h3 id="modalTitle">数据更新</h3>
+    <p>系统接入 <strong>东方财富实时行情API</strong>，每60秒自动刷新指数数据。<br>推荐与持仓价格基于真实行情，分析框架为模拟数据。</p>
+    <p style="font-size:0.78rem;color:var(--text-muted);">完整三大框架分析引擎（谐波形态识别 + 多因子模型 + Quantopia量化系统）将逐步接入。</p>
+    <button onclick="closeRefreshModal()" aria-label="关闭数据更新弹窗">我知道了</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCRIPTS (load order matters - dependencies first)
+     ============================================================ -->
+<!-- Pre-generated data loader (if available) -->
 <style>
 /* ============================================================
    RESET & BASE - Bloomberg Terminal Inspired Dark Theme
@@ -1570,549 +1816,10 @@ table.history-table tbody tr:hover { background: var(--bg-hover); }
   border: 0;
 }
 </style>
-</head>
-<body>
-
-<!-- Screen reader announcer (visually hidden) -->
-<div id="srAnnouncer" class="sr-only" role="status" aria-live="polite"></div>
-
-<!-- ============================================================
-     TOP NAVIGATION
-     ============================================================ -->
-<nav class="top-nav" aria-label="主导航">
-  <div class="nav-left">
-    <span class="nav-logo"><span class="accent">和谐</span>交易顾问</span>
-    <span class="nav-date" id="navDate" aria-label="数据日期">2026-05-16 14:30 CST</span>
-    <span class="data-badge loading" id="dataBadge" role="status" aria-live="polite"><span class="spinner" style="width:10px;height:10px;border-width:1.5px;"></span> 加载中</span>
-  </div>
-  <div class="nav-right">
-    <button class="btn-refresh" onclick="openRefreshModal()" aria-label="刷新数据 (快捷键 Ctrl+R)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-      刷新数据
-    </button>
-  </div>
-</nav>
-
-<!-- ============================================================
-     MAIN CONTENT GRID
-     ============================================================ -->
-<main class="main-content" id="mainContent">
-
-  <!-- ========== MARKET OVERVIEW ========== -->
-  <section class="section" id="section-market" aria-labelledby="marketTitle">
-    <div class="section-header">
-      <span class="section-title" id="marketTitle"><span class="dot dot-blue" aria-hidden="true"></span>市场概览</span>
-      <span style="font-size:0.7rem;color:var(--text-muted)">收盘数据 · 2026-05-15</span>
-    </div>
-    <div class="section-body">
-      <div class="market-grid" id="marketGrid" role="list" aria-label="指数列表">
-        <!-- Populated by JS -->
-      </div>
-      <div class="sentiment-row" aria-label="市场情绪指标">
-        <div class="sentiment-gauge">
-          <span class="gauge-label">市场情绪</span>
-          <span class="gauge-val" id="sentimentVal">中性偏多</span>
-          <div class="gauge-bar" aria-hidden="true"></div>
-        </div>
-        <div class="sentiment-gauge">
-          <span class="gauge-label">VIX 恐慌指数</span>
-          <span class="gauge-val" style="color:var(--green)">18.3</span>
-        </div>
-        <div class="sentiment-gauge">
-          <span class="gauge-label">北向资金 (亿)</span>
-          <span class="gauge-val" style="color:var(--green)">+43.7</span>
-        </div>
-        <div class="sentiment-gauge">
-          <span class="gauge-label">市场阶段</span>
-          <span class="gauge-val" style="color:var(--cyan)">积累期 → 上行</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== TODAY'S RECOMMENDATIONS ========== -->
-  <section class="section" id="section-recommendations" aria-labelledby="recTitle">
-    <div class="section-header">
-      <span class="section-title" id="recTitle"><span class="dot dot-green" aria-hidden="true"></span>今日推荐</span>
-      <span style="font-size:0.7rem;color:var(--text-muted)">基于三大框架融合分析</span>
-    </div>
-    <div class="section-body">
-      <div class="analysis-progress-container" id="analysisProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-        <div class="analysis-progress-header">
-          <span class="analysis-progress-label">三框架分析引擎运行中</span>
-          <span class="analysis-progress-count" id="analysisProgressCount">0 / 0</span>
-        </div>
-        <div class="analysis-progress-track">
-          <div class="analysis-progress-fill" id="analysisProgressFill" style="width:0%"></div>
-        </div>
-        <div class="analysis-progress-detail" id="analysisProgressDetail">准备中...</div>
-      </div>
-      <div class="rec-cards" id="recCards">
-        <!-- Populated by JS (skeleton shown during loading) -->
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== USER POSITION MANAGEMENT ========== -->
-  <section class="section" id="section-user-positions" aria-labelledby="userPosTitle">
-    <div class="section-header">
-      <span class="section-title" id="userPosTitle"><span class="dot dot-green" style="background:var(--purple);" aria-hidden="true"></span>我的持仓管理</span>
-      <span style="font-size:0.7rem;color:var(--text-muted)">手动输入持仓 · 三框架分析</span>
-    </div>
-    <div class="section-body">
-      <div class="up-toolbar">
-        <div class="up-toolbar-left" id="upSlotCount" aria-live="polite">已录入 0/10 个持仓</div>
-        <div class="up-toolbar-right">
-          <button class="up-btn up-btn-clear" onclick="clearAllUserPositions()" title="清空所有持仓" aria-label="清空所有持仓数据">清空全部</button>
-          <button class="up-btn up-btn-save" onclick="saveUserPositions()" aria-label="保存持仓到本地">保存持仓</button>
-          <button class="up-btn up-btn-analyze" id="btnAnalyzeUser" onclick="analyzeUserPositions()" aria-label="开始分析我的持仓">分析我的持仓</button>
-        </div>
-      </div>
-
-      <div id="upInputContainer" role="form" aria-label="持仓输入表单">
-        <!-- Populated by JS -->
-      </div>
-
-      <button class="up-btn up-btn-expand" id="btnExpandRows" onclick="toggleExpandRows()" style="display:none;" aria-expanded="false">
-        展开更多 (4-10)
-      </button>
-
-      <div class="up-analysis-container" id="upAnalysisContainer" style="display:none;" aria-live="polite">
-        <div class="up-analysis-title">三框架分析结果</div>
-        <div class="up-analysis-subtitle" id="upAnalysisSubtitle">基于谐波形态 · 多因子模型 · 统计检验</div>
-        <div class="up-analysis-grid" id="upAnalysisGrid">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== BACKTEST VERIFICATION ========== -->
-  <section class="section bt-section" id="section-backtest" aria-labelledby="btTitle">
-    <div class="section-header">
-      <span class="section-title" id="btTitle"><span class="dot dot-green" style="background:var(--cyan);" aria-hidden="true"></span>回测验证</span>
-      <span style="font-size:0.7rem;color:var(--text-muted)">5天前历史分析 · 校正因子</span>
-    </div>
-    <div class="section-body">
-      <div class="bt-toolbar">
-        <button class="bt-btn bt-btn-run" id="btnRunBacktest" onclick="runBacktest()" aria-label="运行历史回测验证">运行回测</button>
-        <button class="bt-btn bt-btn-clear" id="btnClearBacktest" onclick="clearBacktestResults()" aria-label="清除回测结果">清除回测结果</button>
-        <label class="bt-toggle" id="btToggleCorrection" title="开启/关闭校正因子对当前建议的影响" tabindex="0" role="switch" aria-checked="true">
-          <span class="bt-toggle-switch active" id="btToggleSwitch" aria-hidden="true"></span>
-          <span id="btToggleLabel">校正因子: 开启</span>
-        </label>
-      </div>
-
-      <div class="bt-progress-wrap" id="btProgressWrap" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-        <div class="bt-progress-bar">
-          <div class="bt-progress-fill" id="btProgressFill" style="width:0%"></div>
-        </div>
-        <div class="bt-progress-text" id="btProgressText">准备中...</div>
-      </div>
-
-      <div class="bt-summary-grid" id="btSummaryGrid" style="display:none;" aria-label="回测摘要">
-        <div class="bt-summary-card">
-          <div class="bt-sl">方向准确率</div>
-          <div class="bt-sv" id="btAccuracy">--</div>
-          <div class="bt-sl" id="btAccuracyLabel">--</div>
-        </div>
-        <div class="bt-summary-card">
-          <div class="bt-sl">平均偏差</div>
-          <div class="bt-sv" id="btAvgBias">--</div>
-          <div class="bt-sl" id="btAvgBiasLabel">--</div>
-        </div>
-        <div class="bt-summary-card">
-          <div class="bt-sl">信号可靠性</div>
-          <div class="bt-sv" id="btReliability">--</div>
-          <div class="bt-sl" id="btReliabilityLabel">--</div>
-        </div>
-        <div class="bt-summary-card">
-          <div class="bt-sl">校正因子</div>
-          <div class="bt-sv" id="btCorrectionFactor">--</div>
-          <div class="bt-sl" id="btCorrectionLabel">--</div>
-        </div>
-      </div>
-
-      <div class="bt-interpretation" id="btInterpretation" style="display:none;" aria-live="polite"></div>
-
-      <div class="bt-table-wrap" id="btTableWrap" style="display:none;" role="table" aria-label="回测详情">
-        <table class="bt-table" id="btTable">
-          <thead>
-            <tr>
-              <th scope="col">股票</th>
-              <th scope="col">历史建议</th>
-              <th scope="col">预测方向</th>
-              <th scope="col">实际涨跌</th>
-              <th scope="col">是否准确</th>
-              <th scope="col">偏差</th>
-            </tr>
-          </thead>
-          <tbody id="btTableBody">
-          </tbody>
-        </table>
-      </div>
-
-      <div class="bt-empty" id="btEmpty" role="status">
-        尚未运行回测。点击"运行回测"对5天前的分析进行验证。
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== ACTIVE POSITIONS TRACKER ========== -->
-  <section class="section" id="section-positions" aria-labelledby="posTitle">
-    <div class="section-header">
-      <span class="section-title" id="posTitle"><span class="dot dot-orange" aria-hidden="true"></span>活跃持仓追踪</span>
-      <span style="font-size:0.7rem;color:var(--text-muted)" id="posCount" aria-live="polite">共 4 个活跃持仓</span>
-    </div>
-    <div class="section-body">
-      <div class="pos-table-wrap" role="table" aria-label="活跃持仓列表">
-        <table class="pos-table" id="posTable">
-          <!-- Populated by JS -->
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== HISTORY ========== -->
-  <section class="section" id="section-history" aria-labelledby="histTitle">
-    <div class="section-header">
-      <span class="section-title" id="histTitle"><span class="dot dot-green" aria-hidden="true"></span>历史推荐记录 (近30天)</span>
-      <span style="font-size:0.7rem;color:var(--text-muted)">胜率: 66.7% | 平均收益: +2.8%</span>
-    </div>
-    <div class="section-body">
-      <div class="history-table-wrap" role="table" aria-label="历史推荐记录">
-        <table class="history-table" id="historyTable">
-          <!-- Populated by JS -->
-        </table>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-<!-- ============================================================
-     FOOTER STATUS BAR
-     ============================================================ -->
-<footer class="footer-bar" role="contentinfo">
-  <span><span class="dot-live" aria-hidden="true"></span> 最后更新: 2026-05-16 14:30:00 CST</span>
-  <span>数据来源: <span id="footerDataSource">东方财富 (实时) | 模拟数据 (备用)</span></span>
-  <span>框架: 和谐交易 · 量化因子 · Quantopia 56讲</span>
-  <span style="color:var(--orange)" role="alert">⚠ 投资有风险 · 不构成投资建议</span>
-</footer>
-
-<!-- ============================================================
-     DATA MODAL
-     ============================================================ -->
-<div class="modal-overlay" id="refreshModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <div class="modal-box">
-    <h3 id="modalTitle">数据更新</h3>
-    <p>系统接入 <strong>东方财富实时行情API</strong>，每60秒自动刷新指数数据。<br>推荐与持仓价格基于真实行情，分析框架为模拟数据。</p>
-    <p style="font-size:0.78rem;color:var(--text-muted);">完整三大框架分析引擎（谐波形态识别 + 多因子模型 + Quantopia量化系统）将逐步接入。</p>
-    <button onclick="closeRefreshModal()" aria-label="关闭数据更新弹窗">我知道了</button>
-  </div>
-</div>
-
-<!-- ============================================================
-     SCRIPTS (load order matters - dependencies first)
-     ============================================================ -->
-<!-- Pre-generated data loader (if available) -->
-<script>
-/* ======== market_data.js ======== */
-// 和谐交易顾问 · 预生成数据
-// 生成时间: 2026-07-07 11:44 CST
-// 数据来源: 东方财富API + 三框架分析引擎
-// 此文件由 update_data.js 自动生成，请勿手动编辑
-window.__MARKET_DATA__ = {
-  "generatedAt": "2026-07-07T03:44:18.136Z",
-  "generatedAtDisplay": "2026-07-07 11:44 CST",
-  "isPreGenerated": true,
-  "date": "2026-07-07",
-  "marketData": [
-    {
-      "name": "上证综指",
-      "value": "3,999.03",
-      "change": "-1.04%",
-      "up": false,
-      "live": true,
-      "valueRaw": 3999.03,
-      "changeRaw": -1.04
-    },
-    {
-      "name": "深证成指",
-      "value": "15,259.20",
-      "change": "-1.02%",
-      "up": false,
-      "live": true,
-      "valueRaw": 15259.2,
-      "changeRaw": -1.02
-    },
-    {
-      "name": "沪深300",
-      "value": "4,802.00",
-      "change": "-0.83%",
-      "up": false,
-      "live": true,
-      "valueRaw": 4802,
-      "changeRaw": -0.83
-    },
-    {
-      "name": "创业板指",
-      "value": "3,918.22",
-      "change": "-0.78%",
-      "up": false,
-      "live": true,
-      "valueRaw": 3918.22,
-      "changeRaw": -0.78
-    },
-    {
-      "name": "恒生指数",
-      "value": "23,507.26",
-      "change": "-0.46%",
-      "up": false,
-      "live": true,
-      "valueRaw": 23507.26,
-      "changeRaw": -0.46
-    },
-    {
-      "name": "日经225",
-      "value": "38,912.70",
-      "change": "+0.31%",
-      "up": true,
-      "live": false,
-      "valueRaw": null,
-      "changeRaw": null
-    },
-    {
-      "name": "S&P 500",
-      "value": "5,847.63",
-      "change": "+0.54%",
-      "up": true,
-      "live": false,
-      "valueRaw": null,
-      "changeRaw": null
-    },
-    {
-      "name": "纳斯达克",
-      "value": "19,520.18",
-      "change": "+0.91%",
-      "up": true,
-      "live": false,
-      "valueRaw": null,
-      "changeRaw": null
-    },
-    {
-      "name": "FTSE 100",
-      "value": "8,312.45",
-      "change": "-0.18%",
-      "up": false,
-      "live": false,
-      "valueRaw": null,
-      "changeRaw": null
-    },
-    {
-      "name": "DAX",
-      "value": "18,935.20",
-      "change": "+0.47%",
-      "up": true,
-      "live": false,
-      "valueRaw": null,
-      "changeRaw": null
-    }
-  ],
-  "recommendations": [
-    {
-      "code": "000021.SZ",
-      "name": "深科技",
-      "signal": "关注",
-      "signalClass": "hold",
-      "position": "3%",
-      "positionRaw": 3,
-      "holdPeriod": "短线(1-5天)",
-      "entry": "54.77",
-      "entryRange": "54.50 - 54.93",
-      "stopLoss": "45.05",
-      "takeProfit": "74.21 (2:1风险回报)",
-      "atr": "4.05",
-      "framework": "结构分析 | 动量97 | 价值11 | 质量91 | 波动15 | 情绪100 | 统计通过 | 趋势neutral",
-      "rationale": "<strong>趋势背景 →</strong>: 趋势=neutral | 价>MA20=是 | MA20斜率=-1.771 | MA20>MA60=是<br><strong>RSI(68)</strong>: 中性 - RSI偏高(68), 追高风险增大<br><strong>谐波形态</strong>: 未检测到标准谐波形态，趋势结构完整<br><strong>因子评分[63分]</strong>: 动量97 | 价值11 | 质量91 | 波动15 | 情绪100<br><strong>统计检验[通过]</strong>: 夏普+6.91, ATR7.4%, 仓位5%→量化折减85%→趋势折减90%<br><strong>量能分析</strong>: 量比(5日)=0.56, 量比(20日)=0.70 [不足]<br><strong>趋势提示</strong>: 趋势中性: 方向不明确, 降低仓位<br><strong>实时行情</strong>: 现价54.77, 涨跌+2.76%, 振幅8.7%, 成交额70.3亿<br><strong>震荡提醒</strong>: 市场处于震荡格局，谐波形态在震荡市中可靠性降低，建议缩小仓位和持仓时间。",
-      "live": true,
-      "currentPrice": 54.77,
-      "changePct": 2.76,
-      "confluenceScore": 43,
-      "harmonicScore": 15,
-      "factorScore": 63,
-      "statsPass": true,
-      "sharpe": 6.91,
-      "correlation": 0.61,
-      "harmonicWeight": 6,
-      "factorWeight": 21,
-      "statsWeight": 24,
-      "antiQuantWeight": 0,
-      "trendWeight": 2,
-      "momentumScore": 97,
-      "valueScore": 11,
-      "qualityScore": 91,
-      "volatilityScore": 15,
-      "sentimentScore": 100,
-      "patternName": "结构分析",
-      "patternDirection": null,
-      "pivotCount": 14,
-      "quantRegime": {
-        "score": 19,
-        "regime": "normal",
-        "marketType": "ranging",
-        "trendEfficiency": 0.46,
-        "noiseRatio": 5.38,
-        "gapFreq": 12,
-        "reversalRate": 0,
-        "volCV": 0.19,
-        "tailRate": 0,
-        "serialCorr": -0.168,
-        "breakdown": "量化冲击=19 | 跳空12% | 反转0% | 波CV=0.19 | 肥尾0% | 自相关=-0.168 | 市场=ranging"
-      },
-      "antiQuantScore": 59,
-      "volumeAuthScore": 84,
-      "patternStabilityScore": 60,
-      "trapRiskScore": 30,
-      "antiQuantBreakdown": "量真实性=84 | 形态稳定=60 | 陷阱风险=30",
-      "trend": "neutral",
-      "trendScore": 36,
-      "rsi": 68,
-      "volumeConfirmed": false,
-      "volSurge": false,
-      "volRatio5": 0.56,
-      "volRatio20": 0.7
-    }
-  ],
-  "positions": [
-    {
-      "entryDate": "2026-07-07",
-      "code": "600036.SH",
-      "name": "招商银行",
-      "entryPrice": "38.75",
-      "currentPrice": "38.75",
-      "currentPriceRaw": 38.75,
-      "pnl": "--",
-      "pnlClass": "positive",
-      "pnlRaw": 0,
-      "status": "holding",
-      "statusText": "持仓中",
-      "action": "持有",
-      "actionClass": "hold",
-      "daysHeld": 0,
-      "expectedRemain": "2-3周",
-      "stopLoss": "36.80",
-      "atr": 0.85,
-      "advice": "沿5日均线稳步上行，谐波形态目标位 43.20 不变。维持当前仓位。",
-      "live": false
-    },
-    {
-      "entryDate": "2026-07-07",
-      "code": "601899.SH",
-      "name": "紫金矿业",
-      "entryPrice": "17.62",
-      "currentPrice": "17.62",
-      "currentPriceRaw": 17.62,
-      "pnl": "--",
-      "pnlClass": "positive",
-      "pnlRaw": 0,
-      "status": "add",
-      "statusText": "加仓信号",
-      "action": "加仓 5%",
-      "actionClass": "buy",
-      "daysHeld": 0,
-      "expectedRemain": "1-2周",
-      "stopLoss": "17.80",
-      "atr": 0.42,
-      "advice": "突破前高确认上行趋势延续，因子模型动量增强。建议加仓 5%。",
-      "live": false
-    }
-  ],
-  "history": [
-    {
-      "date": "2026-05-02",
-      "code": "300308.SZ",
-      "name": "中际旭创",
-      "entry": "115.20",
-      "exit": "128.40",
-      "pnl": "+11.46%",
-      "outcome": "win",
-      "result": "止盈触发",
-      "days": 12,
-      "framework": "谐波蝴蝶 + 动量因子"
-    },
-    {
-      "date": "2026-04-22",
-      "code": "688981.SH",
-      "name": "中芯国际",
-      "entry": "68.50",
-      "exit": "72.10",
-      "pnl": "+5.26%",
-      "outcome": "win",
-      "result": "止盈触发",
-      "days": 9,
-      "framework": "谐波螃蟹 + 均值回归"
-    },
-    {
-      "date": "2026-04-18",
-      "code": "601318.SH",
-      "name": "中国平安",
-      "entry": "48.90",
-      "exit": "45.30",
-      "pnl": "-7.36%",
-      "outcome": "loss",
-      "result": "止损触发",
-      "days": 15,
-      "framework": "谐波加特利 + 质量因子"
-    },
-    {
-      "date": "2026-04-18",
-      "code": "600809.SH",
-      "name": "山西汾酒",
-      "entry": "186.00",
-      "exit": "202.50",
-      "pnl": "+8.87%",
-      "outcome": "win",
-      "result": "止盈触发",
-      "days": 8,
-      "framework": "谐波蝙蝠 + 情绪因子"
-    },
-    {
-      "date": "2026-04-15",
-      "code": "002230.SZ",
-      "name": "科大讯飞",
-      "entry": "42.80",
-      "exit": "41.20",
-      "pnl": "-3.74%",
-      "outcome": "loss",
-      "result": "止损触发",
-      "days": 11,
-      "framework": "谐波螃蟹 + AI因子"
-    },
-    {
-      "date": "2026-04-10",
-      "code": "600276.SH",
-      "name": "恒瑞医药",
-      "entry": "35.60",
-      "exit": "39.15",
-      "pnl": "+9.97%",
-      "outcome": "win",
-      "result": "止盈触发",
-      "days": 14,
-      "framework": "谐波鲨鱼 + 价值因子"
-    }
-  ],
-  "message": "数据由分析引擎于 2026-07-07 11:44 CST 生成"
-};
-</script>
-
-
-
-
-
+<script src="market_data.js"></script>
 <script>
 
-/* ======== js/config.js ======== */
+/* ==== config.js ==== */
 /* ============================================================
    CONFIGURATION & CONSTANTS
    ============================================================ */
@@ -2234,7 +1941,8 @@ const UP_VISIBLE_DEFAULT = 3;
 const BT_STORAGE_KEY_RESULTS = 'harmonious_backtest_results';
 const BT_STORAGE_KEY_FACTOR = 'harmonious_correction_factor';
 const BT_STORAGE_KEY_ENABLED = 'harmonious_correction_enabled';
-/* ======== js/utils.js ======== */
+
+/* ==== utils.js ==== */
 /* ============================================================
    UTILITY FUNCTIONS
    Includes HTML escaping for XSS prevention
@@ -2406,7 +2114,8 @@ function showToast(type, title, message, duration) {
     }, duration);
   }
 }
-/* ======== js/store.js ======== */
+
+/* ==== store.js ==== */
 /* ============================================================
    GLOBAL STATE MANAGEMENT
    ============================================================ */
@@ -2495,7 +2204,8 @@ function recordError(source, message) {
   store.errors.push({ time: new Date(), source: source, message: message });
   if (store.errors.length > 50) store.errors.shift();
 }
-/* ======== js/harmonic.js ======== */
+
+/* ==== harmonic.js ==== */
 /* ============================================================
    HARMONIC PATTERN DETECTION ENGINE (Pillar 1)
    Based on "The Harmonious Trader" - ZigZag + AB=CD + Gartley 222
@@ -2779,7 +2489,8 @@ var HarmonicPatternDetector = {
     };
   }
 };
-/* ======== js/factors.js ======== */
+
+/* ==== factors.js ==== */
 /* ============================================================
    MULTI-FACTOR SCORING MODEL (Pillar 2)
    5 Factors: Momentum 30% + Value 20% + Quality 15% + Volatility 20% + Sentiment 15%
@@ -2808,12 +2519,16 @@ function calculateMultiFactorScore(stock, klines, indexKlines) {
   var qualityScore = calcQualityFactor(klines);
   var volatilityScore = calcVolatilityFactor(klines, close);
   var sentimentScore = calcSentimentFactor(stock, klines);
+  // New: volume-price coordination factor (量价配合)
+  var vpCoordination = calcVolumePriceCoordination(klines);
 
-  var totalScore = momentumScore * 0.30 +
-                   valueScore * 0.20 +
+  // Adjusted weights: momentum boosted for price-movement sensitivity
+  var totalScore = momentumScore * 0.35 +
+                   valueScore * 0.15 +
                    qualityScore * 0.15 +
-                   volatilityScore * 0.20 +
-                   sentimentScore * 0.15;
+                   volatilityScore * 0.15 +
+                   sentimentScore * 0.10 +
+                   vpCoordination * 0.10;
 
   return {
     totalScore: Math.min(100, Math.max(0, Math.round(totalScore))),
@@ -2822,16 +2537,20 @@ function calculateMultiFactorScore(stock, klines, indexKlines) {
     quality: Math.round(qualityScore),
     volatility: Math.round(volatilityScore),
     sentiment: Math.round(sentimentScore),
+    vpCoordination: Math.round(vpCoordination),
     breakdown: '动量' + Math.round(momentumScore) +
                ' | 价值' + Math.round(valueScore) +
                ' | 质量' + Math.round(qualityScore) +
                ' | 波动' + Math.round(volatilityScore) +
-               ' | 情绪' + Math.round(sentimentScore)
+               ' | 情绪' + Math.round(sentimentScore) +
+               ' | 量价' + Math.round(vpCoordination)
   };
 }
 
 /**
- * Momentum factor: weighted Z-score of 5/10/20 day returns
+ * Momentum factor: enhanced sensitivity to recent price movements
+ * Uses 3/5/10/20 day returns with higher weight on short-term
+ * plus trend consistency score (consecutive up/down days)
  */
 function calcMomentumFactor(klines) {
   var len = klines.length;
@@ -2839,12 +2558,34 @@ function calcMomentumFactor(klines) {
 
   var close = klines[len - 1].close;
 
+  // Multi-period returns with increased short-term sensitivity
+  var r3 = len >= 3 ? (close - klines[len - 3].close) / klines[len - 3].close : 0;
   var r5 = len >= 5 ? (close - klines[len - 5].close) / klines[len - 5].close : 0;
   var r10 = len >= 10 ? (close - klines[len - 10].close) / klines[len - 10].close : 0;
   var r20 = len >= 20 ? (close - klines[len - 20].close) / klines[len - 20].close : 0;
 
-  var weightedR = r5 * 0.5 + r10 * 0.3 + r20 * 0.2;
-  var score = 50 + weightedR * 100 * 8;
+  // Weighted: short-term has higher impact (3-day 35%, 5-day 30%, 10-day 20%, 20-day 15%)
+  var weightedR = r3 * 0.35 + r5 * 0.30 + r10 * 0.20 + r20 * 0.15;
+
+  // Trend consistency: count consecutive days in same direction
+  var trendBonus = 0;
+  var upDays = 0, downDays = 0;
+  var checkDays = Math.min(len - 1, 7);
+  for (var i = len - checkDays; i < len; i++) {
+    if (klines[i].close > klines[i - 1].close) upDays++;
+    else downDays++;
+  }
+  // Strong trend = higher score impact
+  var maxDir = Math.max(upDays, downDays);
+  if (maxDir >= 6) trendBonus = 15;      // Very strong trend
+  else if (maxDir >= 5) trendBonus = 10;  // Strong trend
+  else if (maxDir >= 4) trendBonus = 5;   // Moderate trend
+
+  // Apply trend direction: if mostly up, add bonus; if mostly down, subtract
+  if (downDays > upDays) trendBonus = -trendBonus;
+
+  // Amplification: weightedR * 100 converts to %, then scale by 10x for sensitivity
+  var score = 50 + weightedR * 100 * 10 + trendBonus;
   return Math.min(100, Math.max(0, score));
 }
 
@@ -2968,7 +2709,57 @@ function calcSentimentFactor(stock, klines) {
   else score = 30;
   return Math.min(100, Math.max(10, score));
 }
-/* ======== js/stats.js ======== */
+
+/**
+ * Volume-Price Coordination factor (量价配合)
+ * Measures how well volume supports price movements.
+ * High score: rising price with rising volume (bullish confirmation)
+ * or falling price with falling volume (bearish exhaustion)
+ * Low score: price-volume divergence (potential reversal signal)
+ */
+function calcVolumePriceCoordination(klines) {
+  var len = klines.length;
+  if (len < 10) return 50;
+
+  // Look at last 10 days of price-volume relationship
+  var checkLen = Math.min(len - 1, 10);
+  var start = len - checkLen - 1;
+
+  var coordinationScore = 0;
+  var totalWeight = 0;
+
+  for (var i = start + 1; i < len; i++) {
+    var priceChange = (klines[i].close - klines[i - 1].close) / klines[i - 1].close;
+    var volChange = klines[i].volume > 0 && klines[i - 1].volume > 0
+      ? (klines[i].volume - klines[i - 1].volume) / klines[i - 1].volume
+      : 0;
+
+    // Recent days have higher weight
+    var weight = 1 + (i - start) / checkLen;
+
+    // Price up + Volume up = strong bullish coordination (+)
+    // Price down + Volume down = potential bottoming (+)
+    // Price up + Volume down = bearish divergence (-)
+    // Price down + Volume up = bearish confirmation (-)
+    if (priceChange > 0 && volChange > 0) {
+      coordinationScore += weight * Math.min(2, priceChange * 100 + volChange);
+    } else if (priceChange < 0 && volChange < 0) {
+      coordinationScore += weight * 0.3; // Mild positive (selling exhaustion)
+    } else if (priceChange > 0 && volChange < 0) {
+      coordinationScore -= weight * 0.5; // Divergence - weak rally
+    } else if (priceChange < 0 && volChange > 0) {
+      coordinationScore -= weight * Math.min(2, Math.abs(priceChange) * 100 + volChange);
+    }
+
+    totalWeight += weight;
+  }
+
+  // Normalize to 0-100 scale
+  var normalized = 50 + (coordinationScore / Math.max(1, totalWeight)) * 20;
+  return Math.min(100, Math.max(5, Math.round(normalized)));
+}
+
+/* ==== stats.js ==== */
 /* ============================================================
    STATISTICAL VALIDATION (Pillar 3)
    Based on Quantopia 56 Lectures - Correlation, Sharpe Ratio, ATR Position Sizing
@@ -3132,7 +2923,8 @@ function calcEstimatedSharpe(klines) {
   var annualizedStd = std * Math.sqrt(252);
   return (annualizedReturn - 0.025) / annualizedStd;
 }
-/* ======== js/anti-quant.js ======== */
+
+/* ==== anti-quant.js ==== */
 /* ============================================================
    ANTI-QUANT IMPACT MODULE v2.0
    Detects quant-dominated market regimes & validates pattern authenticity
@@ -3404,7 +3196,8 @@ function calcQuantTrapRisk(klines, harmonic) {
     breakdown: riskFactors.length > 0 ? riskFactors.join('; ') : '无明显量化陷阱信号'
   };
 }
-/* ======== js/api.js ======== */
+
+/* ==== api.js ==== */
 /* ============================================================
    API LAYER - Fetch functions with retry & timeout
    ============================================================ */
@@ -3672,7 +3465,8 @@ async function searchStockName(keyword, slotIndex) {
     console.warn('[UserPos] Stock search failed:', err.message);
   }
 }
-/* ======== js/ui.js ======== */
+
+/* ==== ui.js ==== */
 /* ============================================================
    UI RENDER FUNCTIONS
    All innerHTML usage here uses escapeHtml() for XSS safety
@@ -4020,7 +3814,8 @@ function updateFooter() {
     }
   }
 }
-/* ======== js/user-positions.js ======== */
+
+/* ==== user-positions.js ==== */
 /* ============================================================
    USER POSITION MANAGEMENT
    Input, autocomplete, analysis, and result rendering
@@ -4821,7 +4616,8 @@ function showConfirmModal(message, onConfirm) {
     if (cancelBtn) cancelBtn.focus();
   }, 100);
 }
-/* ======== js/backtest.js ======== */
+
+/* ==== backtest.js ==== */
 /* ============================================================
    BACKTEST VERIFICATION SYSTEM
    5-day historical analysis validation & correction factor
@@ -5302,7 +5098,8 @@ function loadBacktestFromStorage() {
     console.warn('[Backtest] Failed to load from localStorage:', e.message);
   }
 }
-/* ======== js/init.js ======== */
+
+/* ==== init.js ==== */
 /* ============================================================
    INITIALIZATION & GLOBAL ERROR BOUNDARY
    ============================================================ */
@@ -5327,6 +5124,33 @@ window.addEventListener('unhandledrejection', function(event) {
   showToast('error', '异步操作失败', msg, 8000);
   recordError('unhandled', msg);
 });
+
+// ---- Daily Recommendation Rotation ----
+var RECENT_RECS_KEY = 'harmonious_recent_recs';
+
+function loadRecentRecommendations() {
+  try {
+    var raw = localStorage.getItem(RECENT_RECS_KEY);
+    if (raw) {
+      var data = JSON.parse(raw);
+      // Only use if it's from the last 3 days
+      if (data.date && data.codes) {
+        var daysAgo = Math.floor((new Date() - new Date(data.date)) / 86400000);
+        if (daysAgo <= 3) return data.codes;
+      }
+    }
+  } catch(e) {}
+  return [];
+}
+
+function saveRecentRecommendations(codes) {
+  try {
+    localStorage.setItem(RECENT_RECS_KEY, JSON.stringify({
+      date: new Date().toISOString().split('T')[0],
+      codes: codes
+    }));
+  } catch(e) {}
+}
 
 // ---- Data Refresh Orchestration ----
 
@@ -5382,8 +5206,9 @@ async function fetchAndGenerateRecommendations() {
   }
   store.analysisRunning = true;
   try {
+    // Fetch top-80 by turnover (expanded from 30 for more diversity)
     var url = API.CLIST +
-      '?pn=1&pz=30&po=1&np=1&fltt=2' +
+      '?pn=1&pz=80&po=1&np=1&fltt=2' +
       '&fields=f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f14,f15,f16,f17,f18,f20,f21' +
       '&fs=m:0+t:6,m:0+t:80';
     var data = await apiFetchWithRetry(url, 12000, 2);
@@ -5394,14 +5219,32 @@ async function fetchAndGenerateRecommendations() {
 
     var stocks = data.data.diff;
 
+    // ---- Daily rotation seed: different stocks get priority each day ----
+    var todayDate = new Date();
+    var daySeed = todayDate.getFullYear() * 1000 +
+      Math.floor((todayDate - new Date(todayDate.getFullYear(), 0, 0)) / 86400000);
+    // Simple hash: mix bits of the day seed
+    var hash = ((daySeed * 2654435761) >>> 0) / 4294967296; // 0..1 pseudo-random based on date
+
+    // ---- Track recently recommended stocks to rotate ----
+    var recentCodes = loadRecentRecommendations();
+
     var candidates = stocks
       .filter(function(s) {
         var pe = s.f9;
         var turnover = s.f6;
-        return turnover > 300000000 && pe > 0 && pe < 200;
+        // Relaxed filter: turnover > 1亿, PE 0-300
+        return turnover > 100000000 && pe > 0 && pe < 300;
       })
       .map(function(s) {
-        var score = Math.log10(s.f6 || 1e8) * 3 + Math.abs(s.f3 || 1) * 2;
+        var code = String(s.f12);
+        var baseScore = Math.log10(s.f6 || 1e8) * 2.5 + Math.abs(s.f3 || 1) * 1.5;
+        // Freshness bonus: stocks NOT in recent recommendations get +25% boost
+        var freshnessBonus = (recentCodes.indexOf(code) === -1) ? 1.25 : 0.7;
+        // Day-based jitter: ±15% pseudo-random variation based on code + date
+        var codeNum = parseInt(code, 10) || 0;
+        var jitter = 0.85 + ((codeNum * 16807 + daySeed * 48271) % 10007) / 10007 * 0.3;
+        var score = baseScore * freshnessBonus * jitter;
         return { stock: s, score: score };
       })
       .sort(function(a, b) { return b.score - a.score; });
@@ -5410,20 +5253,33 @@ async function fetchAndGenerateRecommendations() {
       throw new Error('无符合条件的候选股票');
     }
 
-    // Top 10 with sector diversification
+    // ---- Select top-12 (increased from 10), with sector + market-cap diversity ----
     var topCandidates = [];
     var usedSectors = {};
-    for (var i = 0; i < candidates.length && topCandidates.length < 10; i++) {
+    // Alternate: pick from top half first, then add mid-cap discovery picks
+    for (var i = 0; i < candidates.length && topCandidates.length < 12; i++) {
       var s = candidates[i].stock;
       var code = String(s.f12);
       var sector = code.charAt(0);
-      if (!usedSectors[sector] || topCandidates.length >= 5) {
-        usedSectors[sector] = true;
-        topCandidates.push(candidates[i]);
+      // First 7: sector-diversified top picks
+      if (topCandidates.length < 7) {
+        if (!usedSectors[sector] || Object.keys(usedSectors).length >= 5) {
+          usedSectors[sector] = true;
+          topCandidates.push(candidates[i]);
+        }
+      } else {
+        // Next 5: any remaining high-scorers (allows same-sector if quality is high)
+        var alreadyPicked = false;
+        for (var k = 0; k < topCandidates.length; k++) {
+          if (topCandidates[k].stock.f12 === s.f12) { alreadyPicked = true; break; }
+        }
+        if (!alreadyPicked) {
+          topCandidates.push(candidates[i]);
+        }
       }
     }
 
-    // Get index K-line for correlation & quant regime
+    // ---- Get index K-line for correlation & quant regime ----
     var indexKlines = null;
     var quantRegime = null;
     try {
@@ -5437,7 +5293,8 @@ async function fetchAndGenerateRecommendations() {
     }
 
     var analysisResults = await runThreeFrameworkAnalysis(topCandidates, indexKlines, quantRegime);
-    var topN = analysisResults.slice(0, 5);
+    // Show top 8 (increased from 5)
+    var topN = analysisResults.slice(0, 8);
 
     if (topN.length === 0) {
       throw new Error('所有候选股票分析失败');
@@ -5446,6 +5303,9 @@ async function fetchAndGenerateRecommendations() {
     store.recommendations = topN.map(function(analysis, idx) {
       return buildRecommendationFromAnalysis(analysis, idx + 1);
     });
+
+    // ---- Save this round's codes for next-day rotation ----
+    saveRecentRecommendations(topN.map(function(a) { return String(a.stock.f12); }));
 
     hideAnalysisProgress();
     store.analysisRunning = false;
@@ -5709,7 +5569,7 @@ function manualRefresh() {
   store.preGeneratedTime = null;
   var navDate = document.getElementById('navDate');
   if (navDate) {
-    navDate.textContent = TODAY + ' 14:30 CST [实时分析中...]';
+    navDate.textContent = TODAY + ' 08:00 CST [实时分析中...]';
   }
   refreshAllData().finally(function() {
     if (btn) {
@@ -5814,9 +5674,9 @@ function init() {
   if (navDate) {
     var dateStr;
     if (hasPreGenData) {
-      dateStr = TODAY + ' ' + (store.preGeneratedTime || '14:30 CST') + ' [预生成]';
+      dateStr = TODAY + ' ' + (store.preGeneratedTime || '08:00 CST') + ' [预生成]';
     } else {
-      dateStr = TODAY + ' 14:30 CST [实时]';
+      dateStr = TODAY + ' 08:00 CST [实时]';
     }
     navDate.textContent = dateStr;
   }
@@ -5943,6 +5803,16 @@ if (document.readyState === 'loading') {
 window.addEventListener('beforeunload', function() {
   stopAutoRefresh();
 });
+
 </script>
+
+<!-- Foundation layer -->
+
+<!-- Engine layer -->
+
+<!-- UI & interaction layer -->
+
+<!-- Init (bootstraps everything) -->
+
 </body>
 </html>
